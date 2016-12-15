@@ -17,12 +17,10 @@ const bodyParser = require('body-parser');
 
 app.use(bodyParser.json());
 
-app.get('/pets', (req, res) => {
+app.get('/pets', (req, res, next) => {
   fs.readFile(petsPath, 'utf8', (err, petsJSON) => {
     if (err) {
-      console.error(err.stack);
-
-      return res.sendStatus(500);
+      return next(err);
     }
 
     const pets = JSON.parse(petsJSON);
@@ -31,46 +29,10 @@ app.get('/pets', (req, res) => {
   });
 });
 
-app.post('/pets', (req, res) => {
-  fs.readFile(petsPath, 'utf8', (readErr, petsJSON) => {
-    if (readErr) {
-      console.error(readErr.stack);
-
-      return res.sendStatus(500);
-    }
-
-    const pets = JSON.parse(petsJSON);
-    const name = req.body.name;
-    const age = Number.parseInt(req.body.age);
-    const kind = req.body.kind;
-
-    if (Number.isNaN(age) || !kind || !name) {
-      return res.sendStatus(400);
-    }
-
-    const pet = { age, kind, name };
-
-    pets.push(pet);
-    const newPetJSON = JSON.stringify(pets);
-
-    fs.writeFile(petsPath, newPetJSON, (writeErr) => {
-      if (writeErr) {
-        console.error(writeErr.stack);
-
-        return res.sendStatus(500);
-      }
-
-      res.send(pet);
-    });
-  });
-});
-
-app.get('/pets/:id', (req, res) => {
+app.get('/pets/:id', (req, res, next) => {
   fs.readFile(petsPath, 'utf8', (err, petsJSON) => {
     if (err) {
-      console.error(err.stack);
-
-      return res.sendStatus(500);
+      return next(err);
     }
 
     const id = Number.parseInt(req.params.id);
@@ -84,8 +46,50 @@ app.get('/pets/:id', (req, res) => {
   });
 });
 
+app.post('/pets', (req, res, next) => {
+  fs.readFile(petsPath, 'utf8', (readErr, petsJSON) => {
+    if (readErr) {
+      return next(readErr);
+    }
+
+    const pets = JSON.parse(petsJSON);
+    const age = Number.parseInt(req.body.age);
+    const name = req.body.name;
+    const kind = req.body.kind;
+
+    // const { kind, name } = req.body;
+
+    if (Number.isNaN(age) || !kind || !name) {
+      return res.sendStatus(400);
+    }
+
+    const pet = { age, kind, name };
+
+    pets.push(pet);
+    const newPetJSON = JSON.stringify(pets);
+
+    fs.writeFile(petsPath, newPetJSON, (writeErr) => {
+      if (writeErr) {
+        return next(writeErr);
+      }
+
+      res.send(pet);
+    });
+  });
+});
+
+app.get('/boom', (req, res, next) => {
+  next(new Error('BOOM!'));
+});
+
 app.use((req, res) => {
   res.sendStatus(404);
+});
+
+// eslint-disable-next-line max-params
+app.use((err, req, res, _next) => {
+  console.error(err.stack);
+  res.send(500);
 });
 
 const port = process.env.PORT || 8000;
