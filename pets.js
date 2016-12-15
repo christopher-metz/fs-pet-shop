@@ -20,12 +20,13 @@ if (cmd === 'read') {
     if (process.argv.length > 3) {
       const index = process.argv[3];
 
-      if (index >= pets.length) {
+      if (index >= pets.length || index < 0) {
         console.error(`Usage: ${node} ${file} ${cmd} INDEX`);
         process.exit(1);
       }
       else {
         console.log(pets[index]);
+        process.exit();
       }
     }
     else {
