@@ -17,6 +17,7 @@ const bodyParser = require('body-parser');
 
 app.use(bodyParser.json());
 
+// Read All
 app.get('/pets', (req, res, next) => {
   fs.readFile(petsPath, 'utf8', (err, petsJSON) => {
     if (err) {
@@ -29,6 +30,7 @@ app.get('/pets', (req, res, next) => {
   });
 });
 
+// Read unique
 app.get('/pets/:id', (req, res, next) => {
   fs.readFile(petsPath, 'utf8', (err, petsJSON) => {
     if (err) {
@@ -46,6 +48,7 @@ app.get('/pets/:id', (req, res, next) => {
   });
 });
 
+// Create
 app.post('/pets', (req, res, next) => {
   fs.readFile(petsPath, 'utf8', (readErr, petsJSON) => {
     if (readErr) {
@@ -66,6 +69,67 @@ app.post('/pets', (req, res, next) => {
     const pet = { age, kind, name };
 
     pets.push(pet);
+    const newPetJSON = JSON.stringify(pets);
+
+    fs.writeFile(petsPath, newPetJSON, (writeErr) => {
+      if (writeErr) {
+        return next(writeErr);
+      }
+
+      res.send(pet);
+    });
+  });
+});
+
+app.patch('/pets/:id', (req, res, next) => {
+  fs.readFile(petsPath, 'utf8', (readErr, petsJSON) => {
+    if (readErr) {
+      return next(readErr);
+    }
+
+    const id = Number.parseInt(req.params.id);
+    const pets = JSON.parse(petsJSON);
+
+    if (id < 0 || id >= pets.length || Number.isNaN(id)) {
+      return res.sendStatus(404);
+    }
+
+    const age = Number.parseInt(req.body.age);
+    const { kind, name } = req.body;
+
+    if (Number.isNaN(age) || !kind || !name) {
+      return res.sendStatus(400);
+    }
+
+    const pet = { age, kind, name };
+
+    pets[id] = pet;
+    const newPetJSON = JSON.stringify(pets);
+
+    fs.writeFile(petsPath, newPetJSON, (writeErr) => {
+      if (writeErr) {
+        return next(writeErr);
+      }
+
+      res.send(pet);
+    });
+  });
+});
+
+app.delete('/pets/:id', (req, res, next) => {
+  fs.readFile(petsPath, 'utf8', (readErr, petsJSON) => {
+    if (readErr) {
+      return next(readErr);
+    }
+
+    const id = Number.parseInt(req.params.id);
+    const pets = JSON.parse(petsJSON);
+
+    if (id < 0 || id >= pets.length || Number.isNaN(id)) {
+      return res.sendStatus(404);
+    }
+
+    const pet = pets.splice(id, 1)[0];
     const newPetJSON = JSON.stringify(pets);
 
     fs.writeFile(petsPath, newPetJSON, (writeErr) => {
